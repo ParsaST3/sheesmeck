@@ -265,17 +265,16 @@ document.getElementById('brainFile').addEventListener('change', e=>{
   reader.onerror=()=>{status.textContent='خواندن فایل ناموفق بود';};
   if(file.name.toLowerCase().endsWith('.flyc')) reader.readAsArrayBuffer(file); else reader.readAsText(file);
 });
-// On GitHub Pages, fetch the public graph in chunks from this repository's raw files.
+// On GitHub Pages, load the compact real FlyWire pathway graph by default.
 if(location.protocol==='https:' || location.protocol==='http:'){
   const host=location.hostname.split('.')[0];
   const repo=location.pathname.split('/').filter(Boolean)[0] || `${host}.github.io`;
   const brainStatus=document.getElementById('brainStatus');
-  brainStatus.textContent='در حال دریافت گراف FlyWire از GitHub…';
-  const parts=['part-00.bin','part-01.bin','part-02.bin'];
-  Promise.all(parts.map(name=>fetch(`https://raw.githubusercontent.com/${host}/${repo}/main/brain/${name}`)
-    .then(r=>{if(!r.ok)throw new Error(`${name}: HTTP ${r.status}`);return r.arrayBuffer();})))
-    .then(chunks=>{const size=chunks.reduce((sum,chunk)=>sum+chunk.byteLength,0);const all=new Uint8Array(size);let offset=0;for(const chunk of chunks){all.set(new Uint8Array(chunk),offset);offset+=chunk.byteLength;}buildRealNet(parseFullBrainBuffer(all.buffer));})
-    .catch(err=>{brainStatus.textContent='بارگذاری خودکار ناموفق بود؛ فایل FLYC را دستی انتخاب کن';console.warn('GitHub brain load failed:',err);});
+  brainStatus.textContent='در حال دریافت گراف سبک FlyWire…';
+  fetch(`https://raw.githubusercontent.com/${host}/${repo}/main/brain/fly_brain_real.json`)
+    .then(r=>{if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.json();})
+    .then(buildRealNet)
+    .catch(err=>{brainStatus.textContent='بارگذاری خودکار ناموفق بود؛ فایل گراف را دستی انتخاب کن';console.warn('GitHub brain load failed:',err);});
 }
 function realBrainStep(odorL,odorR,threatSignal){
   const net=realNet, input=new Float32Array(net.n);
